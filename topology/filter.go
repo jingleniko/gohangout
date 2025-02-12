@@ -1,7 +1,7 @@
 package topology
 
 import (
-	"reflect"
+    //"reflect"
 
 	"github.com/childe/gohangout/condition_filter"
 	"github.com/childe/gohangout/field_deleter"
@@ -24,7 +24,7 @@ type FilterBox struct {
 
 	config map[interface{}]interface{}
 
-	failTag      string
+	failTag      interface{}
 	removeFields []field_deleter.FieldDeleter
 	addFields    map[field_setter.FieldSetter]value_render.ValueRender
 }
@@ -37,9 +37,9 @@ func NewFilterBox(config map[interface{}]interface{}) *FilterBox {
 	}
 
 	if v, ok := config["failTag"]; ok {
-		f.failTag = v.(string)
+		f.failTag = v
 	} else {
-		f.failTag = ""
+		f.failTag = nil
 	}
 
 	if remove_fields, ok := config["remove_fields"]; ok {
@@ -77,16 +77,22 @@ func (f *FilterBox) PostProcess(event map[string]interface{}, success bool) map[
 			}
 		}
 	} else {
-		if f.failTag != "" {
-			if tags, ok := event["tags"]; ok {
-				if reflect.TypeOf(tags).Kind() == reflect.String {
-					event["tags"] = []interface{}{tags.(string), f.failTag}
-				} else if reflect.TypeOf(tags).Kind() == reflect.Array {
-					event["tags"] = append(tags.([]interface{}), f.failTag)
-				}
-			} else {
-				event["tags"] = f.failTag
-			}
+		if f.failTag != nil {
+            if tags, ok := event["tags"]; ok {
+                switch tags := tags.(type) {
+                case string:
+                    event["tags"] = []interface{}{tags, f.failTag}
+                case []interface{}:
+                    switch failTag := f.failTag.(type) {
+                    case string:
+                        event["tags"] = append(tags, failTag)
+                    case []interface{}:
+                        event["tags"] = append(tags, failTag...)
+                    }
+                }
+            } else {
+                event["tags"] = f.failTag
+            }
 		}
 	}
 	return event
