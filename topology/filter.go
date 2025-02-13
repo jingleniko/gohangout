@@ -78,20 +78,20 @@ func (f *FilterBox) PostProcess(event map[string]interface{}, success bool) map[
 		}
 	} else {
 		if f.failTag != nil {
-            if tags, ok := event["tags"]; ok {
-                switch tags := tags.(type) {
+             if tags, ok := event["tags"].([]interface{}); ok {
+                switch failTag := f.failTag.(type) {
                 case string:
-                    event["tags"] = []interface{}{tags, f.failTag}
+                    event["tags"] = append(tags, failTag)
                 case []interface{}:
-                    switch failTag := f.failTag.(type) {
-                    case string:
-                        event["tags"] = append(tags, failTag)
-                    case []interface{}:
-                        event["tags"] = append(tags, failTag...)
-                    }
+                    event["tags"] = append(tags, failTag...)
                 }
             } else {
-                event["tags"] = f.failTag
+                switch failTag := f.failTag.(type) {
+                case string:
+                    event["tags"] = []interface{}{failTag}
+                case []interface{}:
+                    event["tags"] = failTag
+                }
             }
 		}
 	}
